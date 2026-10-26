@@ -281,3 +281,30 @@ h1, h2, h3, .big, .brand, .tile, .en, .q-big, .done-emoji + h2 { font-family: "J
 
 /* 하단 탭에 가려지지 않게 스크롤 여유 */
 .feedback, .msg, .finish { scroll-margin-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 90px); }
+
+/* 문법 */
+.today-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.today-grid b { font-size: 20px; }
+.grammar-today { display: block; margin-top: 14px; background: var(--mint); box-shadow: none; }
+.grammar-today b { font-size: 17px; }
+.grammar-progress .bar { margin: 8px 0; }
+.grammar-progress p { margin: 6px 0 0; }
+.lesson-no { width: 34px; height: 34px; flex: none; border-radius: 50%; background: var(--yellow); display: grid; place-items: center; font-family: "Jua", sans-serif; font-size: 16px; }
+.done-mark { width: 28px; height: 28px; border-radius: 50%; background: var(--good); color: #fff; display: grid; place-items: center; font-weight: 700; flex: none; }
+.lesson-head { text-align: center; margin: 4px 0 16px; }
+.lesson-head h2 { font-size: 26px; margin: 8px 0 4px; line-height: 1.3; }
+.lesson-head p { color: var(--muted); margin: 0; }
+.pill { display: inline-block; font-size: 13px; padding: 3px 10px; border-radius: 99px; background: var(--lilac); }
+.points { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.points li { line-height: 1.55; }
+.example { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.example .grow { flex: 1; }
+.example .en { font-size: 18px; line-height: 1.3; }
+.example .ko { color: var(--muted); font-size: 14px; }
+.big-btn { margin-top: 22px; min-height: 56px; font-size: 18px; }
+.q-sentence { font-size: 24px; line-height: 1.4; margin: 18px 0 6px; font-weight: 700; }
+.q-sentence .blank { color: var(--primary-dark); }
+.small-q { font-size: 24px; margin-top: 6px; }
+.feedback .why { font-weight: 400; font-size: 15px; margin-top: 8px; text-align: left; background: rgba(255,255,255,.55); padding: 8px 10px; border-radius: 12px; }
+.tabbar a { font-size: 11px; }
+.tabbar a span { font-size: 20px; }
