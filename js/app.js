@@ -7,6 +7,7 @@ const DEFAULT_STATE = {
   phrasesDone: {},  // 들어본/말해본 표현
   days: {},         // 날짜별 활동 { words, phrases, quiz, talk, speak }
   quizzes: [],      // { date, score, total }
+  grammar: {},      // 문법 레슨별 { best, total }
   speech: { tries: 0, good: 0 },
   settings: { rate: 0.85, apiKey: "", model: "claude-opus-5-5", name: "" },
 };
@@ -34,7 +35,7 @@ function dayKey(d = new Date()) {
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
 function logActivity(kind, n = 1) {
   const k = dayKey();
-  const day = state.days[k] || (state.days[k] = { words: 0, phrases: 0, quiz: 0, talk: 0, speak: 0 });
+  const day = state.days[k] || (state.days[k] = { words: 0, phrases: 0, quiz: 0, talk: 0, speak: 0, grammar: 0 });
   day[kind] = (day[kind] || 0) + n;
   save();
 }
@@ -77,6 +78,8 @@ function grade(w, known) {
 }
 const ALL_WORDS = WORD_DECKS.flatMap((d) => d.words);
 const ALL_PHRASES = PHRASE_SETS.flatMap((s) => s.phrases);
+const GRAMMAR = [...GRAMMAR_1, ...GRAMMAR_2];
+const grammarDone = (l) => { const g = state.grammar[l.id]; return g && g.best >= Math.ceil(g.total * 0.7); };
 
 /* ---------- 음성: 듣기 ---------- */
 let voices = [];
@@ -195,6 +198,7 @@ function viewHome() {
   const hi = hour < 12 ? "좋은 아침이에요" : hour < 18 ? "좋은 오후예요" : "오늘도 수고했어요";
   const name = state.settings.name ? `${esc(state.settings.name)}님, ` : "";
   const todayWord = ALL_WORDS[Math.floor(Date.now() / 864e5) % ALL_WORDS.length];
+  const nextGrammar = GRAMMAR.find((l) => !grammarDone(l)) || GRAMMAR[Math.floor(Date.now() / 864e5) % GRAMMAR.length];
 
   app.innerHTML = `${header("꽃도연 영어정복")}
   <main class="page">
@@ -209,6 +213,7 @@ function viewHome() {
     <section class="today-grid">
       <div><b>${today.words || 0}</b><span>단어</span></div>
       <div><b>${today.phrases || 0}</b><span>표현</span></div>
+      <div><b>${today.grammar || 0}</b><span>문법</span></div>
       <div><b>${today.quiz || 0}</b><span>퀴즈</span></div>
       <div><b>${today.talk || 0}</b><span>대화</span></div>
     </section>
@@ -219,6 +224,11 @@ function viewHome() {
       <div class="ex">${esc(todayWord[2])} ${speakBtn(todayWord[2], "▶")}</div>
     </section>
 
+    <a class="grammar-today card" href="#/grammar/${nextGrammar.id}">
+      <div class="label">오늘의 문법 · ${nextGrammar.no}강</div>
+      <div class="row"><div><b>${esc(nextGrammar.title)}</b><div class="muted small">${esc(nextGrammar.summary)}</div></div><span class="count">›</span></div>
+    </a>
+
     ${due ? `<a class="cta" href="#/review">📚 복습할 단어 ${due}개 <span>›</span></a>` : ""}
 
     <section class="menu-grid">
@@ -227,7 +237,7 @@ function viewHome() {
       <a href="#/quiz" class="tile mint"><span>✏️</span>퀴즈</a>
       <a href="#/talk" class="tile lilac"><span>👩‍🏫</span>선생님 대화</a>
     </section>
-    <p class="foot-note">외운 단어 ${learned} / ${ALL_WORDS.length}개</p>
+    <p class="foot-note">외운 단어 ${learned} / ${ALL_WORDS.length}개 · 끝낸 문법 ${GRAMMAR.filter(grammarDone).length} / ${GRAMMAR.length}강</p>
   </main>`;
 }
 
@@ -620,10 +630,10 @@ const MODELS = {
   "claude-haiku-5-5": "Claude Haiku 5.5 (가장 저렴)",
 };
 const FALLBACK_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5"];
-const TUTOR_SYSTEM = `You are Emma, a warm, patient native English teacher chatting with a Korean woman whose English is between beginner and intermediate (about CEFR A2-B1, level 3-5 out of 10). She works as a physical therapist, loves flowers, and is learning for travel, daily conversation and self-improvement.
+const TUTOR_SYSTEM = `You are Emma, a warm, patient native English teacher chatting with a Korean woman whose English is at an easy beginner to lower-intermediate level (about CEFR A1-A2, level 2-4 out of 10). She works as a physical therapist, loves flowers, and is learning for travel, daily conversation and self-improvement.
 
 Rules:
-- Use natural, everyday English at A2-B1 level: clear sentences, common phrasal verbs and useful expressions, but no rare words or complex grammar. Usually 2-4 sentences per turn.
+- Use easy, natural everyday English (A1-A2): short sentences, common words, simple tenses. Avoid idioms and long sentences. Usually 2-3 short sentences per turn.
 - Always end with ONE easy question so the conversation keeps going.
 - Be encouraging and friendly. Use an emoji now and then.
 - If her message has a grammar or word mistake, add a line starting with "💡" that shows the better sentence in English, followed by a very short explanation in Korean. Only correct the most important mistake, and also suggest a more natural expression when her sentence is correct but sounds unnatural. If there is no mistake, don't add this line.
@@ -781,11 +791,131 @@ function viewAiChat(topicId) {
   }
 }
 
+/* ---------- 화면: 문법 ---------- */
+function viewGrammar() {
+  setNav("grammar");
+  const done = GRAMMAR.filter(grammarDone).length;
+  const item = (l) => {
+    const g = state.grammar[l.id];
+    const mark = grammarDone(l) ? `<span class="done-mark">✓</span>` : g ? `<span class="count">${g.best}/${g.total}</span>` : `<span class="count">›</span>`;
+    return `<a class="list-item" href="#/grammar/${l.id}">
+      <span class="lesson-no">${l.no}</span>
+      <span class="grow"><b>${esc(l.title)}</b><small>${esc(l.summary)}</small></span>${mark}</a>`;
+  };
+  app.innerHTML = `${header("문법")}
+  <main class="page">
+    <section class="card grammar-progress">
+      <div class="row"><b>문법 30강</b><span class="muted">${done} / ${GRAMMAR.length} 완료</span></div>
+      <span class="bar"><i style="width:${Math.round((done / GRAMMAR.length) * 100)}%"></i></span>
+      <p class="muted small">설명을 읽고, 예문을 듣고, 연습 문제를 풀어요. 70% 이상 맞히면 완료!</p>
+    </section>
+    <h3 class="section-title">🌱 기초 <small>1~15강</small></h3>
+    <div class="list">${GRAMMAR.filter((l) => l.level === "기초").map(item).join("")}</div>
+    <h3 class="section-title">🌷 활용 <small>16~30강</small></h3>
+    <div class="list">${GRAMMAR.filter((l) => l.level !== "기초").map(item).join("")}</div>
+  </main>`;
+}
+
+function viewGrammarLesson(id) {
+  setNav("grammar");
+  const l = GRAMMAR.find((x) => x.id === id);
+  if (!l) { location.hash = "#/grammar"; return; }
+  const i = GRAMMAR.indexOf(l);
+  const prev = GRAMMAR[i - 1], next = GRAMMAR[i + 1];
+  const g = state.grammar[l.id];
+  app.innerHTML = `${header(`${l.no}강`, "#/grammar")}
+  <main class="page">
+    <section class="lesson-head">
+      <span class="pill">${esc(l.level)}</span>
+      <h2>${esc(l.title)}</h2>
+      <p>${esc(l.summary)}</p>
+    </section>
+    <div class="card">
+      <div class="label">📌 핵심 정리</div>
+      <ul class="points">${l.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+    </div>
+    <h3 class="section-title">🔊 예문</h3>
+    <div class="list">
+      ${l.examples.map((e) => `<div class="card example"><div class="grow"><div class="en">${esc(e[0])}</div><div class="ko">${esc(e[1])}</div></div>${speakBtn(e[0])}</div>`).join("")}
+    </div>
+    <a class="btn primary wide big-btn" href="#/grammar/${l.id}/practice">✏️ 연습 문제 풀기 (${l.exercises.length}문제)</a>
+    ${g ? `<p class="foot-note">최고 점수 ${g.best} / ${g.total}${grammarDone(l) ? " · 완료 ✓" : ""}</p>` : ""}
+    <div class="btn-row">
+      ${prev ? `<a class="btn" href="#/grammar/${prev.id}">‹ ${prev.no}강</a>` : ""}
+      ${next ? `<a class="btn" href="#/grammar/${next.id}">${next.no}강 ›</a>` : ""}
+    </div>
+  </main>`;
+}
+
+function runGrammar(id) {
+  setNav("grammar");
+  const l = GRAMMAR.find((x) => x.id === id);
+  if (!l) { location.hash = "#/grammar"; return; }
+  const qs = l.exercises.map((e) => {
+    const order = shuffle(e.options.map((_, k) => k));
+    return { ...e, order };
+  });
+  let i = 0, score = 0;
+  const back = `#/grammar/${l.id}`;
+
+  function show() {
+    if (i >= qs.length) return finish();
+    const q = qs[i];
+    const isSentence = !q.q.includes("___");
+    const prompt = isSentence
+      ? `<div class="q-label">${esc(q.q)}</div><div class="q-big ko small-q">${esc(q.ko)}</div>`
+      : `<div class="q-sentence">${esc(q.q).replace("___", '<span class="blank">___</span>')}</div><div class="q-label">${esc(q.ko)}</div>`;
+    app.innerHTML = `${header(`${l.no}강 연습`, back)}
+    <main class="page">
+      <div class="progress"><i style="width:${(i / qs.length) * 100}%"></i></div><div class="qnum">${i + 1} / ${qs.length}</div>
+      <div class="quiz">${prompt}
+        <div class="opts">${q.order.map((k) => `<button class="opt" data-k="${k}">${esc(q.options[k])}</button>`).join("")}</div>
+      </div>
+      <div id="fb"></div>
+    </main>`;
+    app.querySelectorAll(".opt").forEach((b) => (b.onclick = () => {
+      const k = +b.dataset.k, ok = k === q.answer;
+      app.querySelectorAll(".opt").forEach((x) => { x.disabled = true; if (+x.dataset.k === q.answer) x.classList.add("right"); });
+      if (!ok) b.classList.add("wrong"); else score++;
+      const full = isSentence ? q.options[q.answer] : q.q.replace("___", q.options[q.answer]);
+      $("#fb").innerHTML = `<div class="feedback ${ok ? "good" : "bad"}">
+        <div>${ok ? "정답이에요! 🎉" : "아쉬워요 🥲"}</div>
+        <div class="fb-word">${esc(full)} ${speakBtn(full)}</div>
+        <div class="why">💡 ${esc(q.why)}</div>
+        <button class="btn primary wide" id="nextq">${i + 1 < qs.length ? "다음 문제" : "결과 보기"}</button>
+      </div>`;
+      speak(full);
+      $("#nextq").onclick = () => { i++; show(); };
+      $("#fb").scrollIntoView({ behavior: "smooth", block: "end" });
+    }));
+  }
+
+  function finish() {
+    const prev = state.grammar[l.id];
+    state.grammar[l.id] = { best: Math.max(score, prev ? prev.best : 0), total: qs.length };
+    logActivity("grammar");
+    const passed = score >= Math.ceil(qs.length * 0.7);
+    const next = GRAMMAR[GRAMMAR.indexOf(l) + 1];
+    app.innerHTML = `${header(`${l.no}강 결과`, back)}
+    <main class="page center">
+      <div class="done-emoji">${passed ? "🌸" : "🌱"}</div>
+      <h2>${score} / ${qs.length}</h2>
+      <p>${score === qs.length ? "만점! 완벽해요 🏆" : passed ? "통과! 잘했어요 👏" : "조금만 더! 설명을 다시 보고 도전해요 💪"}</p>
+      <div class="btn-row">
+        <button class="btn" id="retry">다시 풀기</button>
+        ${passed && next ? `<a class="btn primary" href="#/grammar/${next.id}">${next.no}강으로 ›</a>` : `<a class="btn primary" href="${back}">설명 다시 보기</a>`}
+      </div>
+      <p class="foot-note"><a href="#/grammar">문법 목록으로</a></p>
+    </main>`;
+    $("#retry").onclick = () => runGrammar(id);
+  }
+  show();
+}
+
 /* ---------- 화면: 학습 기록 ---------- */
 function viewStats() {
   setNav("stats");
   const learned = ALL_WORDS.filter(isLearned).length;
-  const studied = ALL_WORDS.filter((w) => cardOf(w)).length;
   const phrases = Object.keys(state.phrasesDone).length;
   const qz = state.quizzes;
   const avg = qz.length ? Math.round((qz.reduce((a, q) => a + q.score / q.total, 0) / qz.length) * 100) : 0;
@@ -822,7 +952,7 @@ function viewStats() {
     </section>
     <section class="stat-grid">
       <div class="stat"><b>${learned}</b><span>외운 단어</span></div>
-      <div class="stat"><b>${studied}</b><span>공부한 단어</span></div>
+      <div class="stat"><b>${GRAMMAR.filter(grammarDone).length}</b><span>끝낸 문법</span></div>
       <div class="stat"><b>${phrases}</b><span>익힌 표현</span></div>
       <div class="stat"><b>${qz.length}</b><span>푼 퀴즈</span></div>
       <div class="stat"><b>${avg}%</b><span>퀴즈 평균</span></div>
@@ -915,6 +1045,7 @@ function route() {
   if (a === "phrases") return b ? viewPhraseSet(b) : viewPhrases();
   if (a === "quiz") return viewQuizHome();
   if (a === "talk") return b === "role" ? viewRoleplay(c) : b === "ai" ? viewAiChat(c) : viewTalk();
+  if (a === "grammar") return c === "practice" ? runGrammar(b) : b ? viewGrammarLesson(b) : viewGrammar();
   if (a === "stats") return viewStats();
   if (a === "settings") return viewSettings();
   viewHome();

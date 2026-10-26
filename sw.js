@@ -1,6 +1,6 @@
 // 오프라인에서도 열리도록 캐시. 온라인이면 항상 최신 파일을 먼저 받아옴.
-const CACHE = "daily-english-v2";
-const FILES = ["./", "index.html", "css/style.css", "js/data.js", "js/app.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png"];
+const CACHE = "daily-english-v3";
+const FILES = ["./", "index.html", "css/style.css", "js/data.js", "js/grammar1.js", "js/grammar2.js", "js/app.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
