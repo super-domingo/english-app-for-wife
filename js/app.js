@@ -196,7 +196,7 @@ function viewHome() {
   const name = state.settings.name ? `${esc(state.settings.name)}님, ` : "";
   const todayWord = ALL_WORDS[Math.floor(Date.now() / 864e5) % ALL_WORDS.length];
 
-  app.innerHTML = `${header("매일 영어")}
+  app.innerHTML = `${header("꽃도연 영어정복")}
   <main class="page">
     <p class="hello">${name}${hi} ☀️</p>
     <section class="streak-card">
@@ -559,7 +559,7 @@ function viewRoleplay(id) {
   function bubble(who, en, ko) {
     const div = document.createElement("div");
     div.className = `msg ${who}`;
-    div.innerHTML = `${who === "teacher" ? `<span class="who">👩‍🏫</span>` : ""}
+    div.innerHTML = `${who === "teacher" ? `<span class="who">${rp.partner || "👩‍🏫"}</span>` : ""}
       <div class="bubble"><div>${esc(en)}</div>${ko ? `<div class="trans">${esc(ko)}</div>` : ""}
       <div class="bubble-tools">${speakBtn(en)}${ko ? `<button class="mini" data-trans>뜻</button>` : ""}</div></div>`;
     chat.appendChild(div);
@@ -620,13 +620,13 @@ const MODELS = {
   "claude-haiku-5-5": "Claude Haiku 5.5 (가장 저렴)",
 };
 const FALLBACK_MODELS = ["claude-opus-5-5", "claude-sonnet-5-5"];
-const TUTOR_SYSTEM = `You are Emma, a warm, patient native English teacher chatting with a Korean woman who is a BEGINNER English learner. She is learning for travel, daily conversation and self-improvement.
+const TUTOR_SYSTEM = `You are Emma, a warm, patient native English teacher chatting with a Korean woman whose English is between beginner and intermediate (about CEFR A2-B1, level 3-5 out of 10). She works as a physical therapist, loves flowers, and is learning for travel, daily conversation and self-improvement.
 
 Rules:
-- Use very simple English (A1-A2 level): short sentences, common words. At most 2-3 short sentences per turn.
+- Use natural, everyday English at A2-B1 level: clear sentences, common phrasal verbs and useful expressions, but no rare words or complex grammar. Usually 2-4 sentences per turn.
 - Always end with ONE easy question so the conversation keeps going.
 - Be encouraging and friendly. Use an emoji now and then.
-- If her message has a grammar or word mistake, add a line starting with "💡" that shows the better sentence in English, followed by a very short explanation in Korean. Only correct the most important mistake. If there is no mistake, don't add this line.
+- If her message has a grammar or word mistake, add a line starting with "💡" that shows the better sentence in English, followed by a very short explanation in Korean. Only correct the most important mistake, and also suggest a more natural expression when her sentence is correct but sounds unnatural. If there is no mistake, don't add this line.
 - If she writes in Korean, gently help: show how to say it in English on a "💡" line, then continue in English.
 - As the LAST line, always add "🇰🇷 " followed by a natural Korean translation of your English reply (not the 💡 line).
 - Never use markdown headings, bullet lists or bold text.`;
@@ -876,7 +876,7 @@ function viewSettings() {
       <p class="muted small">학습 기록은 이 휴대폰에만 저장돼요. 브라우저 데이터를 지우면 기록도 사라져요.</p>
       <button class="btn danger" id="reset">학습 기록 모두 지우기</button>
     </div>
-    <p class="foot-note">매일 영어 · 사랑을 담아 만든 앱 💕</p>
+    <p class="foot-note">꽃도연 영어정복 · 사랑을 담아 만든 앱 💕</p>
   </main>`;
 
   $("#name").onchange = (e) => { s.name = e.target.value.trim(); save(); toast("저장했어요"); };
