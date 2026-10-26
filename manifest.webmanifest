@@ -1,7 +1,7 @@
 {
-  "name": "매일 영어",
-  "short_name": "매일 영어",
-  "description": "매일 조금씩, 여행과 일상 영어 공부",
+  "name": "꽃도연 영어정복",
+  "short_name": "꽃도연 영어정복",
+  "description": "매일 조금씩, 여행·일상·꽃가게·물리치료 영어 공부",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
